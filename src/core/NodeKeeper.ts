@@ -28,9 +28,15 @@ export class NodeKeeper {
     blockNumber: number,
     api: ApiPromise
   ): Promise<BlockHash> {
-    const blockHash: BlockHash = await api.rpc.chain.getBlockHash(blockNumber);
+    try {
+      const blockHash: BlockHash = await api.rpc.chain.getBlockHash(
+        blockNumber
+      );
 
-    return blockHash;
+      return blockHash;
+    } catch (error) {
+      throw error;
+    }
   }
 
   public async getAccountState(
@@ -41,13 +47,17 @@ export class NodeKeeper {
     const address_table: AddressTable = JSON.parse(
       fs.readFileSync(this.address_table, "utf-8")
     );
-    if (!address_table[address]) throw new Error("The address not found");
 
-    const apiAt = await api.at(blockHash);
-    const codec: Codec = await apiAt.query.system.account(address);
-    const json = codec.toJSON();
+    try {
+      if (!address_table[address]) throw new Error("The address not found");
+      const apiAt = await api.at(blockHash);
+      const codec: Codec = await apiAt.query.system.account(address);
+      const json = codec.toJSON();
 
-    return json as unknown as AccountInfo;
+      return json as unknown as AccountInfo;
+    } catch (error) {
+      throw error;
+    }
   }
 
   public async addNewBlock(

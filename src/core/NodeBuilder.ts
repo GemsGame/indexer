@@ -1,26 +1,48 @@
-import { Provider, NodeConnector } from "./NodeConnector";
+import { ApiPromise } from "@polkadot/api";
+import { Provider, NodeAdapter } from "./NodeAdapter";
 
-export class NodeBuilder {
-  private _nodes: NodeConnector[];
-  private providers: Provider[];
+type Thread = {
+  node: NodeAdapter;
+  api: ApiPromise;
+};
+
+export abstract class NodeBuilder {
+  public threads: Thread[];
+  protected providers: Provider[];
 
   constructor(providers: Provider[]) {
-    this._nodes = [];
+    this.threads = [];
     this.providers = providers;
-    this.init();
   }
-  public get nodes(): NodeConnector[] { return this._nodes; }
-  
-  private async init():Promise<NodeConnector[]> {
-    try {
-      for (let i = 0; i < this.providers.length; i++) {
-        this._nodes[i] = new NodeConnector(this.providers[i]);
-        await this._nodes[i].init();
-      }
 
-      return this._nodes;
-    } catch (err) {
-      throw err;
+  public async init(): Promise<void> {
+    await this.execute(this.providers);
+  }
+  protected abstract execute(providers: Provider[]): Promise<void>;
+}
+
+export class OneNodeOneConnection extends NodeBuilder {
+  public async execute(providers: Provider[]) {
+    for (let i = 0; i < providers.length; i++) {
+      const node = new NodeAdapter(providers[i]);
+      const api = await ApiPromise.create({ provider: node.provider });
+
+      this.threads.push({ node, api });
+    }
+  }
+}
+
+export class OneNodeMultiConnections extends NodeBuilder {
+  public async execute(providers: Provider[]) {
+    const connections = 10;
+
+    for (let i = 0; i < providers.length; i++) {
+      for (let z = 0; z < connections; z++) {
+        const node = new NodeAdapter(providers[i]);
+        const api = await ApiPromise.create({ provider: node.provider });
+
+        this.threads.push({ node, api });
+      }
     }
   }
 }

@@ -1,9 +1,9 @@
-import Router, {Express} from "express";
+import Router from "express";
+import { addAddressToList, getAddressBalanceByBlock } from "../controllers/balances";
 
-const router:Express = Router();
+const router = Router();
 
-router.get("/balances/:address/:block_no");
-router.post("/balances/:address");
-
+router.get("/balances/:address/:block_no", getAddressBalanceByBlock);
+router.post("/balances/:address", addAddressToList);
 
 export default router;
