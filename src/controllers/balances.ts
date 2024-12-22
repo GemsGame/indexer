@@ -1,10 +1,17 @@
 import { Request, Response } from "express";
 import { controller } from "../core/NodeController";
 
-export const addAddressToList = async (
+type addAddressToList = (
   request: Request<{ address: string }>,
   response: Response
-): Promise<void> => {
+) => Promise<void>;
+
+type getAddressInfoByBlock = (
+  request: Request<{ address: string; block_no: number }>,
+  response: Response
+) => Promise<void>;
+
+export const addAddressToList: addAddressToList = async (request, response) => {
   try {
     await controller.keeper.addAddress(request.params.address);
     response
@@ -19,9 +26,9 @@ export const addAddressToList = async (
   }
 };
 
-export const getAddressBalanceByBlock = async (
-  request: Request<{ address: string; block_no: number }>,
-  response: Response
+export const getAddressInfoByBlock: getAddressInfoByBlock = async (
+  request,
+  response
 ) => {
   const { block_no, address } = request.params;
 
@@ -33,15 +40,14 @@ export const getAddressBalanceByBlock = async (
     const accountInfo = await controller.keeper.getAccountState(
       blockHash,
       address,
-      controller.strategy.threads[Math.floor(Math.random() *  controller.strategy.threads.length)].api
+      controller.strategy.threads[
+        Math.floor(Math.random() * controller.strategy.threads.length)
+      ].api
     );
 
     await controller.keeper.addNewBlock(blockHash, block_no);
 
-    response
-      .status(200)
-      .send(accountInfo);
-
+    response.status(200).send(accountInfo);
   } catch (error) {
     if (error instanceof Error) {
       response.status(404).json({ error: error.message });
